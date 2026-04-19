@@ -9,38 +9,161 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AshaRouteImport } from './routes/asha'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PatientTriageRouteImport } from './routes/patient.triage'
+import { Route as PatientResultRouteImport } from './routes/patient.result'
+import { Route as PatientHomeRouteImport } from './routes/patient.home'
+import { Route as AshaVisitsRouteImport } from './routes/asha.visits'
+import { Route as AshaProfileRouteImport } from './routes/asha.profile'
+import { Route as AshaHomeRouteImport } from './routes/asha.home'
+import { Route as AshaAlertsRouteImport } from './routes/asha.alerts'
+import { Route as AshaVisitIdRouteImport } from './routes/asha.visit.$id'
 
+const AshaRoute = AshaRouteImport.update({
+  id: '/asha',
+  path: '/asha',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PatientTriageRoute = PatientTriageRouteImport.update({
+  id: '/patient/triage',
+  path: '/patient/triage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatientResultRoute = PatientResultRouteImport.update({
+  id: '/patient/result',
+  path: '/patient/result',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatientHomeRoute = PatientHomeRouteImport.update({
+  id: '/patient/home',
+  path: '/patient/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AshaVisitsRoute = AshaVisitsRouteImport.update({
+  id: '/visits',
+  path: '/visits',
+  getParentRoute: () => AshaRoute,
+} as any)
+const AshaProfileRoute = AshaProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AshaRoute,
+} as any)
+const AshaHomeRoute = AshaHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AshaRoute,
+} as any)
+const AshaAlertsRoute = AshaAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => AshaRoute,
+} as any)
+const AshaVisitIdRoute = AshaVisitIdRouteImport.update({
+  id: '/visit/$id',
+  path: '/visit/$id',
+  getParentRoute: () => AshaRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/asha': typeof AshaRouteWithChildren
+  '/asha/alerts': typeof AshaAlertsRoute
+  '/asha/home': typeof AshaHomeRoute
+  '/asha/profile': typeof AshaProfileRoute
+  '/asha/visits': typeof AshaVisitsRoute
+  '/patient/home': typeof PatientHomeRoute
+  '/patient/result': typeof PatientResultRoute
+  '/patient/triage': typeof PatientTriageRoute
+  '/asha/visit/$id': typeof AshaVisitIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/asha': typeof AshaRouteWithChildren
+  '/asha/alerts': typeof AshaAlertsRoute
+  '/asha/home': typeof AshaHomeRoute
+  '/asha/profile': typeof AshaProfileRoute
+  '/asha/visits': typeof AshaVisitsRoute
+  '/patient/home': typeof PatientHomeRoute
+  '/patient/result': typeof PatientResultRoute
+  '/patient/triage': typeof PatientTriageRoute
+  '/asha/visit/$id': typeof AshaVisitIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/asha': typeof AshaRouteWithChildren
+  '/asha/alerts': typeof AshaAlertsRoute
+  '/asha/home': typeof AshaHomeRoute
+  '/asha/profile': typeof AshaProfileRoute
+  '/asha/visits': typeof AshaVisitsRoute
+  '/patient/home': typeof PatientHomeRoute
+  '/patient/result': typeof PatientResultRoute
+  '/patient/triage': typeof PatientTriageRoute
+  '/asha/visit/$id': typeof AshaVisitIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/asha'
+    | '/asha/alerts'
+    | '/asha/home'
+    | '/asha/profile'
+    | '/asha/visits'
+    | '/patient/home'
+    | '/patient/result'
+    | '/patient/triage'
+    | '/asha/visit/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/asha'
+    | '/asha/alerts'
+    | '/asha/home'
+    | '/asha/profile'
+    | '/asha/visits'
+    | '/patient/home'
+    | '/patient/result'
+    | '/patient/triage'
+    | '/asha/visit/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/asha'
+    | '/asha/alerts'
+    | '/asha/home'
+    | '/asha/profile'
+    | '/asha/visits'
+    | '/patient/home'
+    | '/patient/result'
+    | '/patient/triage'
+    | '/asha/visit/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AshaRoute: typeof AshaRouteWithChildren
+  PatientHomeRoute: typeof PatientHomeRoute
+  PatientResultRoute: typeof PatientResultRoute
+  PatientTriageRoute: typeof PatientTriageRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/asha': {
+      id: '/asha'
+      path: '/asha'
+      fullPath: '/asha'
+      preLoaderRoute: typeof AshaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +171,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/patient/triage': {
+      id: '/patient/triage'
+      path: '/patient/triage'
+      fullPath: '/patient/triage'
+      preLoaderRoute: typeof PatientTriageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patient/result': {
+      id: '/patient/result'
+      path: '/patient/result'
+      fullPath: '/patient/result'
+      preLoaderRoute: typeof PatientResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patient/home': {
+      id: '/patient/home'
+      path: '/patient/home'
+      fullPath: '/patient/home'
+      preLoaderRoute: typeof PatientHomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/asha/visits': {
+      id: '/asha/visits'
+      path: '/visits'
+      fullPath: '/asha/visits'
+      preLoaderRoute: typeof AshaVisitsRouteImport
+      parentRoute: typeof AshaRoute
+    }
+    '/asha/profile': {
+      id: '/asha/profile'
+      path: '/profile'
+      fullPath: '/asha/profile'
+      preLoaderRoute: typeof AshaProfileRouteImport
+      parentRoute: typeof AshaRoute
+    }
+    '/asha/home': {
+      id: '/asha/home'
+      path: '/home'
+      fullPath: '/asha/home'
+      preLoaderRoute: typeof AshaHomeRouteImport
+      parentRoute: typeof AshaRoute
+    }
+    '/asha/alerts': {
+      id: '/asha/alerts'
+      path: '/alerts'
+      fullPath: '/asha/alerts'
+      preLoaderRoute: typeof AshaAlertsRouteImport
+      parentRoute: typeof AshaRoute
+    }
+    '/asha/visit/$id': {
+      id: '/asha/visit/$id'
+      path: '/visit/$id'
+      fullPath: '/asha/visit/$id'
+      preLoaderRoute: typeof AshaVisitIdRouteImport
+      parentRoute: typeof AshaRoute
+    }
   }
 }
 
+interface AshaRouteChildren {
+  AshaAlertsRoute: typeof AshaAlertsRoute
+  AshaHomeRoute: typeof AshaHomeRoute
+  AshaProfileRoute: typeof AshaProfileRoute
+  AshaVisitsRoute: typeof AshaVisitsRoute
+  AshaVisitIdRoute: typeof AshaVisitIdRoute
+}
+
+const AshaRouteChildren: AshaRouteChildren = {
+  AshaAlertsRoute: AshaAlertsRoute,
+  AshaHomeRoute: AshaHomeRoute,
+  AshaProfileRoute: AshaProfileRoute,
+  AshaVisitsRoute: AshaVisitsRoute,
+  AshaVisitIdRoute: AshaVisitIdRoute,
+}
+
+const AshaRouteWithChildren = AshaRoute._addFileChildren(AshaRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AshaRoute: AshaRouteWithChildren,
+  PatientHomeRoute: PatientHomeRoute,
+  PatientResultRoute: PatientResultRoute,
+  PatientTriageRoute: PatientTriageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
