@@ -1,8 +1,8 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Home, ClipboardList, Bell, User } from "lucide-react";
 import { useSession } from "@/lib/session";
-import { alertsForAsha } from "@/lib/mockData";
+import { getAshaAlerts } from "@/lib/data.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/asha")({
@@ -13,13 +13,24 @@ function AshaLayout() {
   const { role, asha } = useSession();
   const navigate = useNavigate();
   const loc = useLocation();
+  const [alertCount, setAlertCount] = useState(0);
 
   useEffect(() => {
     if (role !== "asha") navigate({ to: "/" });
   }, [role, navigate]);
 
+  useEffect(() => {
+    if (!asha) return;
+    const load = () =>
+      getAshaAlerts({ data: { ashaId: asha.id } }).then((r) => {
+        if (r.ok) setAlertCount(r.data.filter((a) => a.urgency !== "green" && !a.acknowledged).length);
+      });
+    void load();
+    const t = setInterval(load, 20000);
+    return () => clearInterval(t);
+  }, [asha, loc.pathname]);
+
   if (!asha) return null;
-  const alertCount = alertsForAsha(asha.id).filter((a) => a.urgency !== "green").length;
 
   const tabs = [
     { to: "/asha/home", label: "Home", icon: Home, match: "/asha/home" },
@@ -31,7 +42,6 @@ function AshaLayout() {
   return (
     <div className="min-h-screen bg-secondary/30 pb-24">
       <Outlet />
-
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-card/95 backdrop-blur">
         <div className="mx-auto grid max-w-2xl grid-cols-4">
           {tabs.map((t) => {

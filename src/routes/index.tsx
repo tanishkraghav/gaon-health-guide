@@ -33,19 +33,23 @@ function LoginScreen() {
   const [workerId, setWorkerId] = useState("");
   const [pin, setPin] = useState("");
 
-  const onPatient = (e: React.FormEvent) => {
+  const onPatient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!village.trim() || phone.trim().length < 10) {
       toast.error("Please enter your village and a 10-digit phone number");
       return;
     }
-    loginPatient(village.trim(), phone.trim());
-    navigate({ to: "/patient/home" });
+    try {
+      await loginPatient(village.trim(), phone.trim());
+      navigate({ to: "/patient/home" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Login failed");
+    }
   };
 
-  const onAsha = (e: React.FormEvent) => {
+  const onAsha = async (e: React.FormEvent) => {
     e.preventDefault();
-    const a = loginAsha(workerId.trim(), pin.trim());
+    const a = await loginAsha(workerId.trim(), pin.trim());
     if (!a) {
       toast.error("Invalid Worker ID or PIN. Try ASH-UP-2241 / 1234");
       return;
