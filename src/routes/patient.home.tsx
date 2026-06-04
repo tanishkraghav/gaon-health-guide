@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSession } from "@/lib/session";
 import { LANGUAGES, t } from "@/lib/i18n";
-import { triageHistory } from "@/lib/mockData";
+import { getPatientRecentAlerts, type AlertRow } from "@/lib/data.functions";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/patient/home")({
   component: PatientHome,
@@ -17,18 +17,23 @@ export const Route = createFileRoute("/patient/home")({
 function PatientHome() {
   const { lang, setLang, patient, role, logout } = useSession();
   const navigate = useNavigate();
+  const [recent, setRecent] = useState<AlertRow[]>([]);
 
   useEffect(() => {
     if (role !== "patient") navigate({ to: "/" });
   }, [role, navigate]);
 
-  if (!patient) return null;
+  useEffect(() => {
+    if (!patient) return;
+    void getPatientRecentAlerts({ data: { patientId: patient.id } }).then((r) => {
+      if (r.ok) setRecent(r.data);
+    });
+  }, [patient]);
 
-  const recent = triageHistory.filter((r) => r.patientId === patient.id).slice(-3).reverse();
+  if (!patient) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-soft/30 to-background pb-20">
-      {/* Header */}
       <div className="mx-auto flex max-w-2xl items-center justify-between px-5 pt-5">
         <div>
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Namaste</p>
@@ -53,7 +58,6 @@ function PatientHome() {
         </div>
       </div>
 
-      {/* Mic */}
       <div className="mx-auto mt-12 flex max-w-2xl flex-col items-center px-5 text-center">
         <Link
           to="/patient/triage"
@@ -70,7 +74,6 @@ function PatientHome() {
         )}
       </div>
 
-      {/* Recent visits */}
       <div className="mx-auto mt-16 max-w-2xl px-5">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
           <History className="h-4 w-4" />
@@ -79,14 +82,14 @@ function PatientHome() {
         </div>
         <div className="space-y-2">
           {recent.length === 0 && (
-            <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">No visits yet.</p>
+            <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">No triage yet. Tap the mic to start.</p>
           )}
           {recent.map((r) => (
             <Card key={r.id} className="flex items-center justify-between gap-3 p-4">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{r.conditionGuess}</p>
-                <p className="truncate text-xs text-muted-foreground">{r.symptoms.join(" · ")}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{new Date(r.date).toLocaleDateString()}</p>
+                <p className="truncate text-sm font-medium">{r.condition_guess || "Triage"}</p>
+                <p className="truncate text-xs text-muted-foreground">{(r.symptoms || []).join(" · ") || r.symptom_summary}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
               </div>
               <UrgencyBadge urgency={r.urgency} />
             </Card>

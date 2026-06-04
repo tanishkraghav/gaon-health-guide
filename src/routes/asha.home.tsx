@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Clock, ArrowUpRight, AlertTriangle, Plus, LogOut } from "lucide-react";
 import { useSession } from "@/lib/session";
-import { alertsForAsha, visitsForAsha, getPatient } from "@/lib/mockData";
+import { getAshaHomeData, type VisitRow } from "@/lib/data.functions";
 import { UrgencyDot } from "@/components/UrgencyBadge";
 
 export const Route = createFileRoute("/asha/home")({
@@ -11,17 +12,25 @@ export const Route = createFileRoute("/asha/home")({
   head: () => ({ meta: [{ title: "Swasthya Sathi — ASHA Dashboard" }] }),
 });
 
+interface Metrics { patientsThisMonth: number; pending: number; referrals: number; criticalAlerts: number; }
+
 function AshaHome() {
   const { asha, logout } = useSession();
   const navigate = useNavigate();
-  if (!asha) return null;
+  const [metrics, setMetrics] = useState<Metrics>({ patientsThisMonth: 0, pending: 0, referrals: 0, criticalAlerts: 0 });
+  const [upcoming, setUpcoming] = useState<VisitRow[]>([]);
 
-  const visits = visitsForAsha(asha.id);
-  const pending = visits.filter((v) => v.status === "Pending").length;
-  const referrals = visits.filter((v) => v.status === "Referred").length;
-  const alerts = alertsForAsha(asha.id);
-  const critical = alerts.filter((a) => a.urgency === "red").length;
-  const upcoming = visits.filter((v) => v.status === "Pending").slice(0, 3);
+  useEffect(() => {
+    if (!asha) return;
+    void getAshaHomeData({ data: { ashaId: asha.id } }).then((r) => {
+      if (r.ok) {
+        setMetrics(r.data.metrics);
+        setUpcoming(r.data.upcoming);
+      }
+    });
+  }, [asha]);
+
+  if (!asha) return null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-6 pt-6">
@@ -36,12 +45,11 @@ function AshaHome() {
         </Button>
       </header>
 
-      {/* Metrics */}
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <Metric icon={Users} label="Patients" value={asha.patientsAssigned} sub="this month" tone="primary" />
-        <Metric icon={Clock} label="Pending visits" value={pending} sub="to schedule" tone="amber" />
-        <Metric icon={ArrowUpRight} label="Referrals" value={referrals} sub="made" tone="primary" />
-        <Metric icon={AlertTriangle} label="Critical alerts" value={critical} sub="from patients" tone="danger" />
+        <Metric icon={Users} label="Visits completed" value={metrics.patientsThisMonth} sub="this month" tone="primary" />
+        <Metric icon={Clock} label="Pending visits" value={metrics.pending} sub="to schedule" tone="amber" />
+        <Metric icon={ArrowUpRight} label="Referrals" value={metrics.referrals} sub="made" tone="primary" />
+        <Metric icon={AlertTriangle} label="Critical alerts" value={metrics.criticalAlerts} sub="from patients" tone="danger" />
       </div>
 
       <div className="mt-5">
@@ -58,23 +66,20 @@ function AshaHome() {
           {upcoming.length === 0 && (
             <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">No pending visits.</p>
           )}
-          {upcoming.map((v) => {
-            const p = getPatient(v.patientId);
-            return (
-              <Link key={v.id} to="/asha/visit/$id" params={{ id: v.id }}>
-                <Card className="flex items-center justify-between gap-3 p-4 transition-shadow hover:shadow-md">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <UrgencyDot urgency={v.urgency} />
-                      <p className="truncate font-medium">{p?.name}</p>
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{v.type} · {p?.village}</p>
+          {upcoming.map((v) => (
+            <Link key={v.id} to="/asha/visit/$id" params={{ id: v.id }}>
+              <Card className="flex items-center justify-between gap-3 p-4 transition-shadow hover:shadow-md">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <UrgencyDot urgency={v.urgency} />
+                    <p className="truncate font-medium">{v.patient?.name ?? "Patient"}</p>
                   </div>
-                  <span className="text-xs font-medium text-primary">Open →</span>
-                </Card>
-              </Link>
-            );
-          })}
+                  <p className="mt-0.5 text-xs text-muted-foreground">{v.type} · {v.patient?.village}</p>
+                </div>
+                <span className="text-xs font-medium text-primary">Open →</span>
+              </Card>
+            </Link>
+          ))}
         </div>
       </section>
     </div>
