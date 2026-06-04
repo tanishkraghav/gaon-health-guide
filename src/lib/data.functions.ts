@@ -24,6 +24,8 @@ export interface AshaRow {
   visits_completed: number;
 }
 
+export type Measurements = Record<string, string | number | boolean>;
+
 export interface VisitRow {
   id: string;
   patient_id: string;
@@ -32,7 +34,7 @@ export interface VisitRow {
   type: string;
   status: "Pending" | "Completed" | "Referred";
   urgency: Urgency;
-  measurements: Record<string, unknown> | null;
+  measurements: Measurements | null;
   ai_summary: string | null;
   red_flags: string[];
   referral_reason: string | null;
