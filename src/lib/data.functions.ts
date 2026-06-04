@@ -323,7 +323,6 @@ export const submitVisit = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, error: error.message };
     // bump visits_completed
     if (data.status === "Completed" && visit?.asha_id) {
-      await sb.rpc("noop").catch(() => {});
       const { data: asha } = await sb.from("asha_workers").select("visits_completed").eq("id", visit.asha_id).maybeSingle();
       if (asha) {
         await sb.from("asha_workers").update({ visits_completed: (asha.visits_completed ?? 0) + 1 }).eq("id", visit.asha_id);
