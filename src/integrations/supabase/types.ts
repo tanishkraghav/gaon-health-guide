@@ -14,7 +14,206 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      asha_workers: {
+        Row: {
+          created_at: string
+          id: string
+          monthly_target: number
+          name: string
+          patients_assigned: number
+          pin: string
+          village_cluster: string[]
+          visits_completed: number
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          monthly_target?: number
+          name: string
+          patients_assigned?: number
+          pin: string
+          village_cluster?: string[]
+          visits_completed?: number
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          monthly_target?: number
+          name?: string
+          patients_assigned?: number
+          pin?: string
+          village_cluster?: string[]
+          visits_completed?: number
+          worker_id?: string
+        }
+        Relationships: []
+      }
+      patients: {
+        Row: {
+          age: number
+          assigned_asha: string | null
+          created_at: string
+          gender: string
+          id: string
+          name: string
+          phone: string
+          pregnant: boolean
+          village: string
+        }
+        Insert: {
+          age?: number
+          assigned_asha?: string | null
+          created_at?: string
+          gender?: string
+          id?: string
+          name: string
+          phone: string
+          pregnant?: boolean
+          village: string
+        }
+        Update: {
+          age?: number
+          assigned_asha?: string | null
+          created_at?: string
+          gender?: string
+          id?: string
+          name?: string
+          phone?: string
+          pregnant?: boolean
+          village?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patients_assigned_asha_fkey"
+            columns: ["assigned_asha"]
+            isOneToOne: false
+            referencedRelation: "asha_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      triage_alerts: {
+        Row: {
+          acknowledged: boolean
+          asha_id: string | null
+          condition_guess: string | null
+          created_at: string
+          id: string
+          notified: boolean
+          notified_at: string | null
+          patient_id: string
+          symptom_summary: string
+          symptoms: string[] | null
+          urgency: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          asha_id?: string | null
+          condition_guess?: string | null
+          created_at?: string
+          id?: string
+          notified?: boolean
+          notified_at?: string | null
+          patient_id: string
+          symptom_summary: string
+          symptoms?: string[] | null
+          urgency: string
+        }
+        Update: {
+          acknowledged?: boolean
+          asha_id?: string | null
+          condition_guess?: string | null
+          created_at?: string
+          id?: string
+          notified?: boolean
+          notified_at?: string | null
+          patient_id?: string
+          symptom_summary?: string
+          symptoms?: string[] | null
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "triage_alerts_asha_id_fkey"
+            columns: ["asha_id"]
+            isOneToOne: false
+            referencedRelation: "asha_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "triage_alerts_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visits: {
+        Row: {
+          ai_summary: string | null
+          asha_id: string
+          created_at: string
+          date: string
+          id: string
+          measurements: Json | null
+          notes: string | null
+          patient_id: string
+          red_flags: string[] | null
+          referral_reason: string | null
+          status: string
+          type: string
+          urgency: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          asha_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          measurements?: Json | null
+          notes?: string | null
+          patient_id: string
+          red_flags?: string[] | null
+          referral_reason?: string | null
+          status?: string
+          type: string
+          urgency?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          asha_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          measurements?: Json | null
+          notes?: string | null
+          patient_id?: string
+          red_flags?: string[] | null
+          referral_reason?: string | null
+          status?: string
+          type?: string
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visits_asha_id_fkey"
+            columns: ["asha_id"]
+            isOneToOne: false
+            referencedRelation: "asha_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visits_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

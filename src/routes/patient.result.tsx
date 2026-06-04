@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Home, Phone, MapPin, Printer, Bell, ArrowLeft, ThumbsUp, ThumbsDown, AlertTriangle, CheckCircle2, Hospital } from "lucide-react";
+import { Home, Phone, MapPin, Printer, Bell, ArrowLeft, ThumbsUp, ThumbsDown, AlertTriangle, CheckCircle2, Hospital, Loader2 } from "lucide-react";
 import { useSession } from "@/lib/session";
-import { getAsha } from "@/lib/mockData";
+import { saveTriageResult, notifyAshaForAlert } from "@/lib/data.functions";
 import { toast } from "sonner";
 
 interface TriageResult {
@@ -26,6 +26,8 @@ function ResultPage() {
   const { patient, role } = useSession();
   const navigate = useNavigate();
   const [result, setResult] = useState<TriageResult | null>(null);
+  const [alertId, setAlertId] = useState<string | null>(null);
+  const savedRef = useRef(false);
 
   useEffect(() => {
     if (role !== "patient") { navigate({ to: "/" }); return; }
@@ -36,8 +38,25 @@ function ResultPage() {
     } catch { /* ignore */ }
   }, [role, navigate]);
 
+  // Persist alert to backend so ASHA can see it.
+  useEffect(() => {
+    if (!result || !patient || savedRef.current) return;
+    savedRef.current = true;
+    void saveTriageResult({
+      data: {
+        patientId: patient.id,
+        urgency: result.urgency,
+        conditionGuess: result.conditionGuess || undefined,
+        symptomSummary: result.summary || result.conditionGuess || "Patient triage",
+        symptoms: result.symptoms.slice(0, 20),
+      },
+    }).then((r) => {
+      if (r.ok) setAlertId(r.data.id);
+      else toast.error("Couldn't sync to ASHA: " + r.error);
+    });
+  }, [result, patient]);
+
   if (!result || !patient) return null;
-  const asha = getAsha(patient.assignedAsha);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -50,7 +69,7 @@ function ResultPage() {
 
       <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
         {result.urgency === "green" && <GreenCard result={result} />}
-        {result.urgency === "yellow" && <YellowCard result={result} ashaName={asha?.name} village={patient.village} />}
+        {result.urgency === "yellow" && <YellowCard result={result} village={patient.village} alertId={alertId} />}
         {result.urgency === "red" && <RedCard result={result} patientName={patient.name} symptoms={result.symptoms} />}
 
         <Card className="p-5">
@@ -103,7 +122,26 @@ function GreenCard({ result }: { result: TriageResult }) {
   );
 }
 
-function YellowCard({ result, ashaName, village }: { result: TriageResult; ashaName?: string; village: string }) {
+function YellowCard({ result, village, alertId }: { result: TriageResult; village: string; alertId: string | null }) {
+  const [notifying, setNotifying] = useState(false);
+  const [notified, setNotified] = useState(false);
+
+  const onNotify = async () => {
+    if (!alertId) {
+      toast.error("Still syncing — try again in a moment.");
+      return;
+    }
+    setNotifying(true);
+    const r = await notifyAshaForAlert({ data: { alertId } });
+    setNotifying(false);
+    if (r.ok) {
+      setNotified(true);
+      toast.success("ASHA worker notified — she'll see this in her alerts.");
+    } else {
+      toast.error(r.error);
+    }
+  };
+
   return (
     <Card className="border-warning/50 bg-warning-soft/50 p-6">
       <div className="flex items-start gap-3">
@@ -118,15 +156,16 @@ function YellowCard({ result, ashaName, village }: { result: TriageResult; ashaN
       </div>
       <div className="mt-5 flex items-center gap-3 rounded-lg border border-warning/40 bg-card p-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft font-semibold text-primary">
-          {(ashaName || "AW").split(" ").map((s) => s[0]).slice(0, 2).join("")}
+          AW
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold">{ashaName || "Your ASHA worker"}</p>
+          <p className="font-semibold">Your ASHA worker</p>
           <p className="text-xs text-muted-foreground"><MapPin className="mr-0.5 inline h-3 w-3" />{village}</p>
         </div>
       </div>
-      <Button className="mt-4 h-12 w-full gap-2" onClick={() => toast.success(`${ashaName || "Worker"} has been notified.`)}>
-        <Bell className="h-4 w-4" /> Notify her I'm coming
+      <Button className="mt-4 h-12 w-full gap-2" onClick={onNotify} disabled={notifying || notified}>
+        {notifying ? <Loader2 className="h-4 w-4 animate-spin" /> : notified ? <CheckCircle2 className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+        {notified ? "ASHA notified" : "Notify her I'm coming"}
       </Button>
     </Card>
   );

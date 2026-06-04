@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, ArrowRight, AlertTriangle, CheckCircle2, Loader2, Stethoscope, Send } from "lucide-react";
-import { visits, getPatient, type Visit } from "@/lib/mockData";
+import { getVisitDetail, submitVisit, type VisitRow, type PatientRow } from "@/lib/data.functions";
 import { ashaDecisionSupport } from "@/server/ai.functions";
 import { toast } from "sonner";
 
@@ -23,10 +23,10 @@ interface Step {
   type: "number" | "boolean" | "select" | "text";
   options?: string[];
   unit?: string;
-  redFlag?: (v: any) => string | null;
+  redFlag?: (v: unknown) => string | null;
 }
 
-function getProtocol(visitType: Visit["type"]): Step[] {
+function getProtocol(visitType: string): Step[] {
   if (visitType === "Antenatal") {
     return [
       { key: "weeks", question: "Weeks of pregnancy", type: "number", unit: "weeks" },
@@ -69,15 +69,31 @@ interface AIResult {
 function ActiveVisit() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const visit = visits.find((v) => v.id === id);
-  const patient = visit ? getPatient(visit.patientId) : null;
+  const [visit, setVisit] = useState<VisitRow | null>(null);
+  const [patient, setPatient] = useState<PatientRow | null>(null);
+  const [loading, setLoading] = useState(true);
   const protocol = useMemo(() => visit ? getProtocol(visit.type) : [], [visit]);
 
   const [stepIdx, setStepIdx] = useState(0);
-  const [data, setData] = useState<Record<string, any>>({});
+  const [data, setData] = useState<Record<string, string | number | boolean>>({});
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<AIResult | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [aiStarted, setAiStarted] = useState(false);
+
+  useEffect(() => {
+    void getVisitDetail({ data: { id } }).then((r) => {
+      if (r.ok) {
+        setVisit(r.data);
+        setPatient(r.data.patient ?? null);
+      }
+      setLoading(false);
+    });
+  }, [id]);
+
+  if (loading) {
+    return <div className="mx-auto max-w-2xl px-4 pt-10 text-center text-sm text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>;
+  }
 
   if (!visit || !patient) {
     return (
@@ -92,26 +108,23 @@ function ActiveVisit() {
   const step = protocol[stepIdx];
   const currentRedFlag = step?.redFlag && data[step.key] !== undefined ? step.redFlag(data[step.key]) : null;
 
-  const setVal = (k: string, v: any) => setData((d) => ({ ...d, [k]: v }));
-
+  const setVal = (k: string, v: string | number | boolean) => setData((d) => ({ ...d, [k]: v }));
   const next = () => setStepIdx((i) => Math.min(protocol.length, i + 1));
   const prev = () => setStepIdx((i) => Math.max(0, i - 1));
 
   async function runAI() {
+    if (!visit || !patient) return;
     setAiLoading(true);
     try {
       const res = await ashaDecisionSupport({
         data: {
-          visitType: visit!.type,
-          patientSummary: `${patient!.name}, ${patient!.age}${patient!.gender}, village ${patient!.village}${patient!.pregnant ? ", currently pregnant" : ""}.`,
-          measurements: data as Record<string, string | number | boolean>,
+          visitType: visit.type,
+          patientSummary: `${patient.name}, ${patient.age}${patient.gender}, village ${patient.village}${patient.pregnant ? ", currently pregnant" : ""}.`,
+          measurements: data,
         },
       });
-      if (!res.ok) {
-        toast.error(res.error);
-      } else {
-        setAiResult(res.data);
-      }
+      if (!res.ok) toast.error(res.error);
+      else setAiResult(res.data);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI request failed");
     } finally {
@@ -119,7 +132,35 @@ function ActiveVisit() {
     }
   }
 
-  if (isReview && !aiResult && !aiLoading) void runAI();
+  if (isReview && !aiResult && !aiLoading && !aiStarted) {
+    setAiStarted(true);
+    void runAI();
+  }
+
+  async function onSubmit(referral: boolean) {
+    if (!visit || !aiResult) return;
+    setSubmitted(true);
+    const hasRed = aiResult.red_flags.length > 0 || referral;
+    const urgency = referral ? "red" : hasRed ? "yellow" : "green";
+    const res = await submitVisit({
+      data: {
+        visitId: visit.id,
+        status: referral ? "Referred" : "Completed",
+        measurements: data,
+        aiSummary: aiResult.visit_notes_summary,
+        redFlags: aiResult.red_flags,
+        referralReason: referral ? aiResult.referral_reason || "Referred by ASHA" : undefined,
+        urgency,
+      },
+    });
+    if (!res.ok) {
+      toast.error(res.error);
+      setSubmitted(false);
+      return;
+    }
+    toast.success(referral ? "Referral sent to PHC." : "Visit saved.");
+    setTimeout(() => navigate({ to: "/asha/visits" }), 700);
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-6 pt-6">
@@ -138,8 +179,6 @@ function ActiveVisit() {
             {isReview ? "Review" : `Step ${stepIdx + 1} of ${protocol.length}`}
           </span>
         </div>
-
-        {/* Progress bar */}
         <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
           <div className="h-full bg-primary transition-all" style={{ width: `${Math.min(100, ((stepIdx) / protocol.length) * 100)}%` }} />
         </div>
@@ -148,14 +187,13 @@ function ActiveVisit() {
       {!isReview && step && (
         <Card className="mt-4 p-5">
           <Label className="text-base font-medium">{step.question}</Label>
-
           {step.type === "number" && (
             <div className="mt-3 flex items-center gap-2">
               <Input
                 type="number"
                 inputMode="decimal"
-                value={data[step.key] ?? ""}
-                onChange={(e) => setVal(step.key, e.target.value === "" ? undefined : Number(e.target.value))}
+                value={data[step.key] !== undefined ? String(data[step.key]) : ""}
+                onChange={(e) => setVal(step.key, e.target.value === "" ? 0 : Number(e.target.value))}
                 className="h-12 text-base"
               />
               {step.unit && <span className="text-sm text-muted-foreground">{step.unit}</span>}
@@ -168,7 +206,7 @@ function ActiveVisit() {
             </div>
           )}
           {step.type === "select" && (
-            <Select value={data[step.key] ?? ""} onValueChange={(v) => setVal(step.key, v)}>
+            <Select value={(data[step.key] as string) ?? ""} onValueChange={(v) => setVal(step.key, v)}>
               <SelectTrigger className="mt-3 h-12 text-base"><SelectValue placeholder="Select…" /></SelectTrigger>
               <SelectContent>
                 {step.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -176,7 +214,7 @@ function ActiveVisit() {
             </Select>
           )}
           {step.type === "text" && (
-            <Textarea value={data[step.key] ?? ""} onChange={(e) => setVal(step.key, e.target.value)} className="mt-3 min-h-[100px]" />
+            <Textarea value={(data[step.key] as string) ?? ""} onChange={(e) => setVal(step.key, e.target.value)} className="mt-3 min-h-[100px]" />
           )}
 
           {currentRedFlag && (
@@ -218,30 +256,26 @@ function ActiveVisit() {
                   </ul>
                 </div>
               )}
-
               <div className="rounded-lg border bg-card p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Next step</p>
                 <p className="mt-1 text-sm">{aiResult.protocol_next_step}</p>
               </div>
-
               <div className="rounded-lg border bg-card p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes</p>
                 <p className="mt-1 text-sm leading-relaxed">{aiResult.visit_notes_summary}</p>
               </div>
-
               {aiResult.referral_recommended && (
                 <div className="rounded-lg border border-warning/40 bg-warning-soft/50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-accent-foreground">Referral recommended</p>
                   <p className="mt-1 text-sm">{aiResult.referral_reason}</p>
                 </div>
               )}
-
               {!submitted ? (
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <Button className="h-12 gap-2" onClick={() => { setSubmitted(true); toast.success("Visit saved."); setTimeout(() => navigate({ to: "/asha/visits" }), 800); }}>
+                  <Button className="h-12 gap-2" onClick={() => onSubmit(false)}>
                     <Send className="h-4 w-4" /> Submit & save
                   </Button>
-                  <Button variant="outline" className="h-12 gap-2 border-warning/50 text-accent-foreground" onClick={() => { setSubmitted(true); toast.success("Referral sent to PHC."); setTimeout(() => navigate({ to: "/asha/visits" }), 800); }}>
+                  <Button variant="outline" className="h-12 gap-2 border-warning/50 text-accent-foreground" onClick={() => onSubmit(true)}>
                     Refer to PHC
                   </Button>
                 </div>

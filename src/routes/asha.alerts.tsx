@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useSession } from "@/lib/session";
-import { alertsForAsha } from "@/lib/mockData";
+import { getAshaAlerts, type AlertRow } from "@/lib/data.functions";
 import { UrgencyDot } from "@/components/UrgencyBadge";
-import { MapPin, Clock, ArrowRight } from "lucide-react";
+import { MapPin, Clock, ArrowRight, Bell } from "lucide-react";
 
 export const Route = createFileRoute("/asha/alerts")({
   component: AshaAlerts,
@@ -22,8 +23,17 @@ function timeAgo(iso: string) {
 
 function AshaAlerts() {
   const { asha } = useSession();
+  const [list, setList] = useState<AlertRow[]>([]);
+
+  useEffect(() => {
+    if (!asha) return;
+    const load = () => getAshaAlerts({ data: { ashaId: asha.id } }).then((r) => r.ok && setList(r.data));
+    void load();
+    const t = setInterval(load, 15000); // poll for new patient triages
+    return () => clearInterval(t);
+  }, [asha]);
+
   if (!asha) return null;
-  const list = alertsForAsha(asha.id).sort((a, b) => +new Date(b.time) - +new Date(a.time));
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-6 pt-6">
@@ -41,22 +51,27 @@ function AshaAlerts() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <UrgencyDot urgency={a.urgency} />
-                    <p className="truncate font-semibold">{a.patientName}</p>
+                    <p className="truncate font-semibold">{a.patient_name ?? "Patient"}</p>
+                    {a.notified && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                        <Bell className="h-2.5 w-2.5" /> Notified
+                      </span>
+                    )}
                   </div>
                   <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3" />{a.village}
                     <span className="mx-1">·</span>
-                    <Clock className="h-3 w-3" />{timeAgo(a.time)}
+                    <Clock className="h-3 w-3" />{timeAgo(a.created_at)}
                   </p>
                 </div>
                 {a.urgency === "red" && (
                   <span className="shrink-0 rounded-full bg-danger px-2 py-0.5 text-[10px] font-bold uppercase text-danger-foreground">Urgent</span>
                 )}
               </div>
-              <p className="mt-3 text-sm">{a.symptomSummary}</p>
+              <p className="mt-3 text-sm">{a.condition_guess ? <span className="font-medium">{a.condition_guess}: </span> : null}{a.symptom_summary}</p>
               <div className="mt-3 flex items-center justify-end">
                 <Link to="/asha/visits" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-                  Open & start visit <ArrowRight className="h-3 w-3" />
+                  Open visits <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
             </div>
