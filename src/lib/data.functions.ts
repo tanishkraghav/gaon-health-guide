@@ -1,66 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-export type Urgency = "green" | "yellow" | "red";
-
-export interface PatientRow {
-  id: string;
-  phone: string;
-  name: string;
-  age: number;
-  gender: "F" | "M";
-  village: string;
-  pregnant: boolean;
-  assigned_asha: string | null;
-}
-
-export interface AshaRow {
-  id: string;
-  worker_id: string;
-  name: string;
-  village_cluster: string[];
-  patients_assigned: number;
-  monthly_target: number;
-  visits_completed: number;
-}
-
-export type Measurements = Record<string, string | number | boolean>;
-
-export interface VisitRow {
-  id: string;
-  patient_id: string;
-  asha_id: string;
-  date: string;
-  type: string;
-  status: "Pending" | "Completed" | "Referred";
-  urgency: Urgency;
-  measurements: Measurements | null;
-  ai_summary: string | null;
-  red_flags: string[];
-  referral_reason: string | null;
-  notes: string | null;
-  patient?: PatientRow | null;
-}
-
-export interface AlertRow {
-  id: string;
-  patient_id: string;
-  asha_id: string | null;
-  urgency: Urgency;
-  condition_guess: string | null;
-  symptom_summary: string;
-  symptoms: string[];
-  notified: boolean;
-  acknowledged: boolean;
-  created_at: string;
-  patient_name?: string;
-  village?: string;
-}
-
-async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
-}
+export type { Urgency, PatientRow, AshaRow, Measurements, VisitRow, AlertRow } from "./data.types";
+import type { PatientRow, AshaRow, VisitRow, AlertRow } from "./data.types";
 
 // ---------- Auth ----------
 
@@ -72,7 +14,7 @@ export const loginPatient = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
     const { data: existing } = await sb
       .from("patients")
       .select("*")
@@ -112,7 +54,7 @@ export const loginAsha = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
     const { data: row, error } = await sb
       .from("asha_workers")
       .select("*")
@@ -128,7 +70,7 @@ export const loginAsha = createServerFn({ method: "POST" })
 export const getPatientRecentAlerts = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ patientId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
     const { data: rows, error } = await sb
       .from("triage_alerts")
       .select("*")
@@ -150,7 +92,7 @@ export const saveTriageResult = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
     const { data: patient } = await sb
       .from("patients")
       .select("assigned_asha")
@@ -175,7 +117,7 @@ export const saveTriageResult = createServerFn({ method: "POST" })
 export const notifyAshaForAlert = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ alertId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
     const { error } = await sb
       .from("triage_alerts")
       .update({ notified: true, notified_at: new Date().toISOString() })
@@ -186,22 +128,11 @@ export const notifyAshaForAlert = createServerFn({ method: "POST" })
 
 // ---------- ASHA ----------
 
-async function attachPatientNames(rows: AlertRow[]): Promise<AlertRow[]> {
-  if (rows.length === 0) return rows;
-  const sb = await admin();
-  const ids = Array.from(new Set(rows.map((r) => r.patient_id)));
-  const { data: pats } = await sb.from("patients").select("id, name, village").in("id", ids);
-  const map = new Map((pats || []).map((p) => [p.id, p]));
-  return rows.map((r) => {
-    const p = map.get(r.patient_id);
-    return { ...r, patient_name: p?.name, village: p?.village };
-  });
-}
 
 export const getAshaAlerts = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ ashaId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
     const { data: rows, error } = await sb
       .from("triage_alerts")
       .select("*")
@@ -222,7 +153,7 @@ export const getAshaVisits = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
     let q = sb.from("visits").select("*").eq("asha_id", data.ashaId).order("date", { ascending: false });
     if (data.type && data.type !== "all") q = q.eq("type", data.type);
     if (data.status && data.status !== "all") q = q.eq("status", data.status);
@@ -239,7 +170,7 @@ export const getAshaVisits = createServerFn({ method: "POST" })
 export const getAshaHomeData = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ ashaId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
     const monthStart = new Date();
     monthStart.setUTCDate(1);
     monthStart.setUTCHours(0, 0, 0, 0);
@@ -285,7 +216,7 @@ export const getAshaHomeData = createServerFn({ method: "POST" })
 export const getVisitDetail = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
     const { data: visit, error } = await sb.from("visits").select("*").eq("id", data.id).maybeSingle();
     if (error) return { ok: false as const, error: error.message };
     if (!visit) return { ok: false as const, error: "Visit not found" };
@@ -306,7 +237,7 @@ export const submitVisit = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
     const { data: visit, error } = await sb
       .from("visits")
       .update({
