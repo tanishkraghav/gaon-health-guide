@@ -89,6 +89,7 @@ function ResultPage() {
 }
 
 function GreenCard({ result }: { result: TriageResult }) {
+  const navigate = useNavigate();
   return (
     <Card className="border-success/40 bg-success-soft/40 p-6">
       <div className="flex items-start gap-3">
