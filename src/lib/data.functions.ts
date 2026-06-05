@@ -140,7 +140,7 @@ export const getAshaAlerts = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) return { ok: false as const, error: error.message };
-    const enriched = await attachPatientNames((rows || []) as AlertRow[]);
+    const enriched = await attachPatientNames(sb, (rows || []) as AlertRow[]);
     return { ok: true as const, data: enriched };
   });
 
