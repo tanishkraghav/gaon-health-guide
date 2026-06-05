@@ -113,7 +113,11 @@ function GreenCard({ result }: { result: TriageResult }) {
           <Button variant="outline" className="h-12 gap-2 border-success/40" onClick={() => toast.success("Glad you feel better!")}>
             <ThumbsUp className="h-4 w-4 text-success" /> I feel better
           </Button>
-          <Button variant="outline" className="h-12 gap-2 border-warning/40" onClick={() => toast.info("Re-running triage…")}>
+          <Button variant="outline" className="h-12 gap-2 border-warning/40" onClick={() => {
+            sessionStorage.removeItem("triage-result");
+            toast.info("Let's check your symptoms again.");
+            navigate({ to: "/patient/triage" });
+          }}>
             <ThumbsDown className="h-4 w-4 text-danger" /> Worsened
           </Button>
         </div>
