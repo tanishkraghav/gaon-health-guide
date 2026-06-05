@@ -24,14 +24,13 @@ const triageTool = {
       properties: {
         action: { type: "string", enum: ["ask", "finalize"], description: "ask = need more info; finalize = enough info to triage" },
         message: { type: "string", description: "The single short message to show the patient (in their language). For 'ask', a follow-up question. For 'finalize', a brief reassuring summary." },
-        urgency_tier: { type: "integer", enum: [1, 2, 3], description: "Only on finalize. 1=home care (green), 2=visit ASHA (yellow), 3=hospital (red)" },
+        urgency_tier: { type: "string", enum: ["1", "2", "3"], description: "Only on finalize. 1=home care (green), 2=visit ASHA (yellow), 3=hospital (red)" },
         condition_guess: { type: "string", description: "Only on finalize. Likely condition in plain language. Avoid definitive diagnosis." },
         home_remedy: { type: "string", description: "Only on finalize. Simple home care if applicable." },
         referral_reason: { type: "string", description: "Only on finalize. Why escalation is needed (or empty for tier 1)." },
         confidence_score: { type: "number", description: "Only on finalize. 0.0-1.0" },
       },
       required: ["action", "message"],
-      additionalProperties: false,
     },
   },
 };
