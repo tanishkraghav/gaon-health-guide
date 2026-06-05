@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, ArrowRight, AlertTriangle, CheckCircle2, Loader2, Stethoscope, Send } from "lucide-react";
 import { getVisitDetail, submitVisit, type VisitRow, type PatientRow } from "@/lib/data.functions";
-import { ashaDecisionSupport } from "@/server/ai.functions";
+import { ashaDecisionSupport } from "@/lib/ai.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/asha/visit/$id")({

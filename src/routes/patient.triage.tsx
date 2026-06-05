@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSession } from "@/lib/session";
 import { LANGUAGES, t } from "@/lib/i18n";
-import { triagePatient } from "@/server/ai.functions";
+import { triagePatient } from "@/lib/ai.functions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
