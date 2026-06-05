@@ -128,17 +128,6 @@ export const notifyAshaForAlert = createServerFn({ method: "POST" })
 
 // ---------- ASHA ----------
 
-async function attachPatientNames(rows: AlertRow[]): Promise<AlertRow[]> {
-  if (rows.length === 0) return rows;
-  const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
-  const ids = Array.from(new Set(rows.map((r) => r.patient_id)));
-  const { data: pats } = await sb.from("patients").select("id, name, village").in("id", ids);
-  const map = new Map((pats || []).map((p) => [p.id, p]));
-  return rows.map((r) => {
-    const p = map.get(r.patient_id);
-    return { ...r, patient_name: p?.name, village: p?.village };
-  });
-}
 
 export const getAshaAlerts = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ ashaId: z.string().uuid() }).parse(d))
