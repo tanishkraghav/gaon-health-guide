@@ -82,14 +82,16 @@ Rules:
       if (!call?.function?.arguments) {
         return { ok: false as const, error: "AI returned no usable response." };
       }
-      const parsed = JSON.parse(call.function.arguments) as {
-        action: "ask" | "finalize";
-        message: string;
-        urgency_tier?: 1 | 2 | 3;
-        condition_guess?: string;
-        home_remedy?: string;
-        referral_reason?: string;
-        confidence_score?: number;
+      const raw = JSON.parse(call.function.arguments) as Record<string, unknown>;
+      const tier = raw.urgency_tier;
+      const parsed = {
+        action: raw.action as "ask" | "finalize",
+        message: String(raw.message ?? ""),
+        urgency_tier: tier != null ? (Number(tier) as 1 | 2 | 3) : undefined,
+        condition_guess: raw.condition_guess as string | undefined,
+        home_remedy: raw.home_remedy as string | undefined,
+        referral_reason: raw.referral_reason as string | undefined,
+        confidence_score: raw.confidence_score as number | undefined,
       };
       return { ok: true as const, data: parsed };
     } catch (e) {
