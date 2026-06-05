@@ -24,14 +24,13 @@ const triageTool = {
       properties: {
         action: { type: "string", enum: ["ask", "finalize"], description: "ask = need more info; finalize = enough info to triage" },
         message: { type: "string", description: "The single short message to show the patient (in their language). For 'ask', a follow-up question. For 'finalize', a brief reassuring summary." },
-        urgency_tier: { type: "integer", enum: [1, 2, 3], description: "Only on finalize. 1=home care (green), 2=visit ASHA (yellow), 3=hospital (red)" },
+        urgency_tier: { type: "string", enum: ["1", "2", "3"], description: "Only on finalize. 1=home care (green), 2=visit ASHA (yellow), 3=hospital (red)" },
         condition_guess: { type: "string", description: "Only on finalize. Likely condition in plain language. Avoid definitive diagnosis." },
         home_remedy: { type: "string", description: "Only on finalize. Simple home care if applicable." },
         referral_reason: { type: "string", description: "Only on finalize. Why escalation is needed (or empty for tier 1)." },
         confidence_score: { type: "number", description: "Only on finalize. 0.0-1.0" },
       },
       required: ["action", "message"],
-      additionalProperties: false,
     },
   },
 };
@@ -83,14 +82,16 @@ Rules:
       if (!call?.function?.arguments) {
         return { ok: false as const, error: "AI returned no usable response." };
       }
-      const parsed = JSON.parse(call.function.arguments) as {
-        action: "ask" | "finalize";
-        message: string;
-        urgency_tier?: 1 | 2 | 3;
-        condition_guess?: string;
-        home_remedy?: string;
-        referral_reason?: string;
-        confidence_score?: number;
+      const raw = JSON.parse(call.function.arguments) as Record<string, unknown>;
+      const tier = raw.urgency_tier;
+      const parsed = {
+        action: raw.action as "ask" | "finalize",
+        message: String(raw.message ?? ""),
+        urgency_tier: tier != null ? (Number(tier) as 1 | 2 | 3) : undefined,
+        condition_guess: raw.condition_guess as string | undefined,
+        home_remedy: raw.home_remedy as string | undefined,
+        referral_reason: raw.referral_reason as string | undefined,
+        confidence_score: raw.confidence_score as number | undefined,
       };
       return { ok: true as const, data: parsed };
     } catch (e) {
@@ -120,7 +121,6 @@ const ashaTool = {
         visit_notes_summary: { type: "string", description: "2-3 sentence summary suitable for the visit record." },
       },
       required: ["red_flags", "protocol_next_step", "referral_recommended", "referral_reason", "visit_notes_summary"],
-      additionalProperties: false,
     },
   },
 };
