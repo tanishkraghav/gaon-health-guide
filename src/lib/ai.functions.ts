@@ -119,7 +119,6 @@ const ashaTool = {
         visit_notes_summary: { type: "string", description: "2-3 sentence summary suitable for the visit record." },
       },
       required: ["red_flags", "protocol_next_step", "referral_recommended", "referral_reason", "visit_notes_summary"],
-      additionalProperties: false,
     },
   },
 };
