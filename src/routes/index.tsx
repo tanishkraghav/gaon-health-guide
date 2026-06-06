@@ -28,6 +28,9 @@ function LoginScreen() {
   // Patient form
   const [village, setVillage] = useState("");
   const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState<"F" | "M">("F");
 
   // ASHA form
   const [workerId, setWorkerId] = useState("");
@@ -35,17 +38,27 @@ function LoginScreen() {
 
   const onPatient = async (e: React.FormEvent) => {
     e.preventDefault();
+    const ageNum = parseInt(age, 10);
+    if (!name.trim()) {
+      toast.error("Please enter your name");
+      return;
+    }
+    if (!Number.isFinite(ageNum) || ageNum < 0 || ageNum > 120) {
+      toast.error("Please enter a valid age");
+      return;
+    }
     if (!village.trim() || phone.trim().length < 10) {
       toast.error("Please enter your village and a 10-digit phone number");
       return;
     }
     try {
-      await loginPatient(village.trim(), phone.trim());
+      await loginPatient({ village: village.trim(), phone: phone.trim(), name: name.trim(), age: ageNum, gender });
       navigate({ to: "/patient/home" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Login failed");
     }
   };
+
 
   const onAsha = async (e: React.FormEvent) => {
     e.preventDefault();
