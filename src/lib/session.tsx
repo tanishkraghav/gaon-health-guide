@@ -90,8 +90,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     persist({ role, patient, asha, lang: l });
   };
 
-  const loginPatient = async (village: string, phone: string) => {
-    const res = await loginPatientFn({ data: { village, phone } });
+  const loginPatient = async (input: { village: string; phone: string; name: string; age: number; gender: "F" | "M" }) => {
+    const res = await loginPatientFn({ data: input });
     if (!res.ok) throw new Error(res.error);
     const sp = toSessionPatient(res.data);
     setPatient(sp);
@@ -100,6 +100,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     persist({ role: "patient", patient: sp, asha: null, lang });
     return sp;
   };
+
 
   const loginAsha = async (workerId: string, pin: string) => {
     const res = await loginAshaFn({ data: { workerId, pin } });
