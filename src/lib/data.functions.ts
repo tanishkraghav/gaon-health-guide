@@ -24,7 +24,22 @@ export const loginPatient = createServerFn({ method: "POST" })
       .eq("phone", data.phone)
       .maybeSingle();
 
-    if (existing) return { ok: true as const, data: existing as PatientRow };
+    if (existing) {
+      const { data: updated, error: updErr } = await sb
+        .from("patients")
+        .update({
+          name: data.name,
+          age: data.age,
+          gender: data.gender,
+          village: data.village,
+        })
+        .eq("id", existing.id)
+        .select("*")
+        .single();
+      if (updErr) return { ok: false as const, error: updErr.message };
+      return { ok: true as const, data: updated as PatientRow };
+    }
+
 
     // Assign to first ASHA whose cluster contains this village; fallback to first ASHA.
     const { data: ashas } = await sb.from("asha_workers").select("id, village_cluster");
