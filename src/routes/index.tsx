@@ -140,6 +140,30 @@ function LoginScreen() {
             <form onSubmit={onPatient} className="mt-5 space-y-4">
               <div>
                 <Label className="flex items-center gap-1.5 text-sm">
+                  <User className="h-3.5 w-3.5" /> Full name
+                </Label>
+                <Input className="mt-1.5 h-12 text-base" value={name} onChange={(e) => setName(e.target.value)} placeholder="Sunita Devi" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-sm">Age</Label>
+                  <Input className="mt-1.5 h-12 text-base" inputMode="numeric" value={age} onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))} maxLength={3} placeholder="30" />
+                </div>
+                <div>
+                  <Label className="text-sm">Gender</Label>
+                  <Select value={gender} onValueChange={(v) => setGender(v as "F" | "M")}>
+                    <SelectTrigger className="mt-1.5 h-12 text-base">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="F">Female</SelectItem>
+                      <SelectItem value="M">Male</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label className="flex items-center gap-1.5 text-sm">
                   <MapPin className="h-3.5 w-3.5" /> {t("villageName", lang)}
                 </Label>
                 <Input className="mt-1.5 h-12 text-base" value={village} onChange={(e) => setVillage(e.target.value)} placeholder="Rampur" />
@@ -149,8 +173,9 @@ function LoginScreen() {
                   <Phone className="h-3.5 w-3.5" /> {t("phoneNumber", lang)}
                 </Label>
                 <Input className="mt-1.5 h-12 text-base" inputMode="numeric" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} maxLength={10} placeholder="9876500001" />
-                <p className="mt-1 text-xs text-muted-foreground">Try 9876500001 to load Sunita Devi's profile.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Existing patients: phone is the unique key.</p>
               </div>
+
               <div className="flex gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setMode(null)}>Back</Button>
                 <Button type="submit" className="flex-1 h-12 text-base">{t("continue", lang)}</Button>
