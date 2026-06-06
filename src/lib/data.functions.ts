@@ -11,10 +11,13 @@ export const loginPatient = createServerFn({ method: "POST" })
     z.object({
       phone: z.string().regex(/^\d{10}$/),
       village: z.string().min(1).max(100),
+      name: z.string().min(1).max(100),
+      age: z.number().int().min(0).max(120),
+      gender: z.enum(["F", "M"]),
     }).parse(d),
   )
   .handler(async ({ data }) => {
-    const { admin, attachPatientNames } = await import("./data.server"); const sb = admin();
+    const { admin } = await import("./data.server"); const sb = admin();
     const { data: existing } = await sb
       .from("patients")
       .select("*")
@@ -35,9 +38,9 @@ export const loginPatient = createServerFn({ method: "POST" })
       .insert({
         phone: data.phone,
         village: data.village,
-        name: `Patient ${data.phone.slice(-4)}`,
-        age: 30,
-        gender: "F",
+        name: data.name,
+        age: data.age,
+        gender: data.gender,
         assigned_asha: assigned,
       })
       .select("*")
@@ -45,6 +48,7 @@ export const loginPatient = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const, data: created as PatientRow };
   });
+
 
 export const loginAsha = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
