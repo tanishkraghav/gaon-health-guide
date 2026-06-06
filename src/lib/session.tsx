@@ -31,7 +31,7 @@ interface SessionState {
   patient: SessionPatient | null;
   asha: SessionAsha | null;
   setLang: (l: LangCode) => void;
-  loginPatient: (village: string, phone: string) => Promise<SessionPatient>;
+  loginPatient: (input: { village: string; phone: string; name: string; age: number; gender: "F" | "M" }) => Promise<SessionPatient>;
   loginAsha: (workerId: string, pin: string) => Promise<SessionAsha | null>;
   logout: () => void;
 }
