@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LANGUAGES, t } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { toast } from "sonner";
+import { LocationAutocomplete } from "@/components/LocationAutocomplete";
+import type { LocationResult } from "@/lib/locationProvider";
 
 export const Route = createFileRoute("/")({
   component: LoginScreen,
@@ -26,7 +28,7 @@ function LoginScreen() {
   const [mode, setMode] = useState<null | "patient" | "asha">(null);
 
   // Patient form
-  const [village, setVillage] = useState("");
+  const [location, setLocation] = useState<LocationResult | null>(null);
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
@@ -47,12 +49,22 @@ function LoginScreen() {
       toast.error("Please enter a valid age");
       return;
     }
-    if (!village.trim() || phone.trim().length < 10) {
-      toast.error("Please enter your village and a 10-digit phone number");
+    if (!location) {
+      toast.error("Please select your village or town from the suggestions");
+      return;
+    }
+    if (phone.trim().length < 10) {
+      toast.error("Please enter a 10-digit phone number");
       return;
     }
     try {
-      await loginPatient({ village: village.trim(), phone: phone.trim(), name: name.trim(), age: ageNum, gender });
+      await loginPatient({
+        village: location.locationName,
+        phone: phone.trim(),
+        name: name.trim(),
+        age: ageNum,
+        gender,
+      });
       navigate({ to: "/patient/home" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Login failed");
@@ -166,7 +178,17 @@ function LoginScreen() {
                 <Label className="flex items-center gap-1.5 text-sm">
                   <MapPin className="h-3.5 w-3.5" /> {t("villageName", lang)}
                 </Label>
-                <Input className="mt-1.5 h-12 text-base" value={village} onChange={(e) => setVillage(e.target.value)} placeholder="Rampur" />
+                <LocationAutocomplete
+                  className="mt-1.5"
+                  value={location}
+                  onChange={setLocation}
+                  placeholder="Rampur"
+                />
+                {location && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {[location.district, location.state, location.country].filter(Boolean).join(", ")}
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="flex items-center gap-1.5 text-sm">
