@@ -215,6 +215,13 @@ function LoginScreen() {
 
         {mode === "asha" && (
           <Card className="mt-8 p-6">
+            <button
+              type="button"
+              onClick={() => setMode(null)}
+              className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to home
+            </button>
             <h2 className="font-display text-xl font-semibold">{t("iAmAsha", lang)}</h2>
             <p className="mt-1 text-sm text-muted-foreground">Sign in with your NHM Worker ID and PIN.</p>
             <form onSubmit={onAsha} className="mt-5 space-y-4">
