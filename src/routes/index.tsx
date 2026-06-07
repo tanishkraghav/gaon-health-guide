@@ -147,6 +147,13 @@ function LoginScreen() {
 
         {mode === "patient" && (
           <Card className="mt-8 p-6">
+            <button
+              type="button"
+              onClick={() => setMode(null)}
+              className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to home
+            </button>
             <h2 className="font-display text-xl font-semibold">{t("iAmPatient", lang)}</h2>
             <p className="mt-1 text-sm text-muted-foreground">No password needed — just your village & phone.</p>
             <form onSubmit={onPatient} className="mt-5 space-y-4">
