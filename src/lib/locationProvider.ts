@@ -50,6 +50,7 @@ export const nominatimProvider: LocationProvider = {
     url.searchParams.set("addressdetails", "1");
     url.searchParams.set("limit", "8");
     url.searchParams.set("accept-language", "en");
+    url.searchParams.set("countrycodes", "in");
 
     const res = await fetch(url.toString(), {
       signal,
