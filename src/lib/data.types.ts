@@ -19,7 +19,14 @@ export interface AshaRow {
   patients_assigned: number;
   monthly_target: number;
   visits_completed: number;
+  phone?: string | null;
+  block?: string | null;
+  district?: string | null;
+  village?: string | null;
+  household_count?: number | null;
+  registration_status?: string;
 }
+
 
 export type Measurements = Record<string, string | number | boolean>;
 
