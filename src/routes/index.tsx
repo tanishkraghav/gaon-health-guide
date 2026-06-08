@@ -68,17 +68,6 @@ function LoginScreen() {
     }
   };
 
-
-  const onAsha = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const a = await loginAsha(workerId.trim(), pin.trim());
-    if (!a) {
-      toast.error("Invalid Worker ID or PIN. Try ASH-UP-2241 / 1234");
-      return;
-    }
-    navigate({ to: "/asha/home" });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-soft/40 via-background to-background">
       {/* Top bar with language */}
@@ -211,37 +200,9 @@ function LoginScreen() {
         )}
 
         {mode === "asha" && (
-          <Card className="mt-8 p-6">
-            <button
-              type="button"
-              onClick={() => setMode(null)}
-              className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back to home
-            </button>
-            <h2 className="font-display text-xl font-semibold">{t("iAmAsha", lang)}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Sign in with your NHM Worker ID and PIN.</p>
-            <form onSubmit={onAsha} className="mt-5 space-y-4">
-              <div>
-                <Label className="flex items-center gap-1.5 text-sm">
-                  <IdCard className="h-3.5 w-3.5" /> {t("workerId", lang)}
-                </Label>
-                <Input className="mt-1.5 h-12 text-base" value={workerId} onChange={(e) => setWorkerId(e.target.value)} placeholder="ASH-UP-2241" />
-              </div>
-              <div>
-                <Label className="flex items-center gap-1.5 text-sm">
-                  <Lock className="h-3.5 w-3.5" /> {t("pin", lang)}
-                </Label>
-                <Input className="mt-1.5 h-12 text-base" type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} maxLength={6} placeholder="••••" />
-                <p className="mt-1 text-xs text-muted-foreground">Demo: ASH-UP-2241 or ASH-UP-2242, PIN 1234.</p>
-              </div>
-              <div className="flex gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setMode(null)}>Back</Button>
-                <Button type="submit" className="flex-1 h-12 text-base">{t("continue", lang)}</Button>
-              </div>
-            </form>
-          </Card>
+          <AshaOnboarding lang={lang} onBack={() => setMode(null)} />
         )}
+
 
         <p className="mt-10 text-center text-xs text-muted-foreground">
           Built for the National Health Mission (NHM) ecosystem · Demo build
