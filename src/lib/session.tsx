@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { LANGUAGES, type LangCode } from "./i18n";
-import { loginPatient as loginPatientFn, loginAsha as loginAshaFn, type PatientRow, type AshaRow } from "./data.functions";
+import { loginPatient as loginPatientFn, loginAsha as loginAshaFn, completeAshaProfile as completeAshaProfileFn, type PatientRow, type AshaRow } from "./data.functions";
 
 type Role = "patient" | "asha" | null;
 
@@ -57,12 +57,17 @@ function toSessionAsha(r: AshaRow): SessionAsha {
     id: r.id,
     workerId: r.worker_id,
     name: r.name,
-    villageCluster: r.village_cluster,
+    villageCluster: r.village_cluster ?? [],
     patientsAssigned: r.patients_assigned,
     monthlyTarget: r.monthly_target,
     visitsCompleted: r.visits_completed,
   };
 }
+
+export function setAshaSession(r: AshaRow) {
+  return toSessionAsha(r);
+}
+
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<Role>(null);
