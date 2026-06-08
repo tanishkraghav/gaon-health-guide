@@ -16,36 +16,84 @@ export type Database = {
     Tables: {
       asha_workers: {
         Row: {
+          block: string | null
           created_at: string
+          district: string | null
+          household_count: number | null
           id: string
           monthly_target: number
           name: string
           patients_assigned: number
+          phone: string | null
           pin: string
+          pin_hash: string | null
+          registration_status: string
+          village: string | null
           village_cluster: string[]
           visits_completed: number
           worker_id: string
         }
         Insert: {
+          block?: string | null
           created_at?: string
+          district?: string | null
+          household_count?: number | null
           id?: string
           monthly_target?: number
           name: string
           patients_assigned?: number
+          phone?: string | null
           pin: string
+          pin_hash?: string | null
+          registration_status?: string
+          village?: string | null
           village_cluster?: string[]
           visits_completed?: number
           worker_id: string
         }
         Update: {
+          block?: string | null
           created_at?: string
+          district?: string | null
+          household_count?: number | null
           id?: string
           monthly_target?: number
           name?: string
           patients_assigned?: number
+          phone?: string | null
           pin?: string
+          pin_hash?: string | null
+          registration_status?: string
+          village?: string | null
           village_cluster?: string[]
           visits_completed?: number
+          worker_id?: string
+        }
+        Relationships: []
+      }
+      otp_requests: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          otp_code: string
+          used: boolean
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          otp_code: string
+          used?: boolean
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          otp_code?: string
+          used?: boolean
           worker_id?: string
         }
         Relationships: []

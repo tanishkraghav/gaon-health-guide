@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { LANGUAGES, type LangCode } from "./i18n";
-import { loginPatient as loginPatientFn, loginAsha as loginAshaFn, type PatientRow, type AshaRow } from "./data.functions";
+import { loginPatient as loginPatientFn, loginAsha as loginAshaFn, completeAshaProfile as completeAshaProfileFn, type PatientRow, type AshaRow } from "./data.functions";
 
 type Role = "patient" | "asha" | null;
 
@@ -33,8 +33,10 @@ interface SessionState {
   setLang: (l: LangCode) => void;
   loginPatient: (input: { village: string; phone: string; name: string; age: number; gender: "F" | "M" }) => Promise<SessionPatient>;
   loginAsha: (workerId: string, pin: string) => Promise<SessionAsha | null>;
+  setAshaFromRow: (r: AshaRow) => SessionAsha;
   logout: () => void;
 }
+
 
 const SessionCtx = createContext<SessionState | null>(null);
 const STORAGE_KEY = "swasthya-session-v2";
@@ -57,12 +59,17 @@ function toSessionAsha(r: AshaRow): SessionAsha {
     id: r.id,
     workerId: r.worker_id,
     name: r.name,
-    villageCluster: r.village_cluster,
+    villageCluster: r.village_cluster ?? [],
     patientsAssigned: r.patients_assigned,
     monthlyTarget: r.monthly_target,
     visitsCompleted: r.visits_completed,
   };
 }
+
+export function setAshaSession(r: AshaRow) {
+  return toSessionAsha(r);
+}
+
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<Role>(null);
@@ -113,6 +120,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return sa;
   };
 
+  const setAshaFromRow = (r: AshaRow) => {
+    const sa = toSessionAsha(r);
+    setAsha(sa);
+    setPatient(null);
+    setRole("asha");
+    persist({ role: "asha", asha: sa, patient: null, lang });
+    return sa;
+  };
+
   const logout = () => {
     setRole(null);
     setPatient(null);
@@ -121,11 +137,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <SessionCtx.Provider value={{ role, lang, patient, asha, setLang, loginPatient, loginAsha, logout }}>
+    <SessionCtx.Provider value={{ role, lang, patient, asha, setLang, loginPatient, loginAsha, setAshaFromRow, logout }}>
       {children}
     </SessionCtx.Provider>
   );
 }
+
 
 export function useSession() {
   const ctx = useContext(SessionCtx);
