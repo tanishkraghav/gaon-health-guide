@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { User, Stethoscope, Languages, Phone, MapPin, IdCard, Lock, Heart, ArrowLeft } from "lucide-react";
+import { User, Stethoscope, Languages, Phone, MapPin, Heart, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { useSession } from "@/lib/session";
 import { toast } from "sonner";
 import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 import type { LocationResult } from "@/lib/locationProvider";
+import { AshaOnboarding } from "@/components/AshaOnboarding";
 
 export const Route = createFileRoute("/")({
   component: LoginScreen,
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/")({
 });
 
 function LoginScreen() {
-  const { lang, setLang, loginPatient, loginAsha } = useSession();
+  const { lang, setLang, loginPatient } = useSession();
   const navigate = useNavigate();
   const [mode, setMode] = useState<null | "patient" | "asha">(null);
 
@@ -33,10 +34,6 @@ function LoginScreen() {
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState<"F" | "M">("F");
-
-  // ASHA form
-  const [workerId, setWorkerId] = useState("");
-  const [pin, setPin] = useState("");
 
   const onPatient = async (e: React.FormEvent) => {
     e.preventDefault();
