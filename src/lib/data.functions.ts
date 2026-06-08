@@ -178,7 +178,7 @@ export const setAshaPin = createServerFn({ method: "POST" })
       .ilike("worker_id", data.workerId)
       .maybeSingle();
     if (!worker) return { ok: false as const, error: "Worker not found" };
-    const hash = sha256(data.pin);
+    const hash = await sha256(data.pin);
     // If profile not yet complete, move to pending_profile; otherwise keep active (forgot-pin reset)
     const nextStatus =
       worker.registration_status === "active" ? "active" : "pending_profile";
@@ -238,7 +238,7 @@ export const loginAsha = createServerFn({ method: "POST" })
     if (!row) return { ok: false as const, error: "Worker ID not found" };
     if (row.registration_status !== "active")
       return { ok: false as const, error: "Account not yet activated" };
-    const hash = sha256(data.pin);
+    const hash = await sha256(data.pin);
     if (row.pin_hash !== hash)
       return { ok: false as const, error: "Incorrect PIN. Please try again." };
     return { ok: true as const, data: row as AshaRow };
