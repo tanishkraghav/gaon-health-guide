@@ -120,6 +120,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return sa;
   };
 
+  const setAshaFromRow = (r: AshaRow) => {
+    const sa = toSessionAsha(r);
+    setAsha(sa);
+    setPatient(null);
+    setRole("asha");
+    persist({ role: "asha", asha: sa, patient: null, lang });
+    return sa;
+  };
+
   const logout = () => {
     setRole(null);
     setPatient(null);
@@ -128,11 +137,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <SessionCtx.Provider value={{ role, lang, patient, asha, setLang, loginPatient, loginAsha, logout }}>
+    <SessionCtx.Provider value={{ role, lang, patient, asha, setLang, loginPatient, loginAsha, setAshaFromRow, logout }}>
       {children}
     </SessionCtx.Provider>
   );
 }
+
 
 export function useSession() {
   const ctx = useContext(SessionCtx);
