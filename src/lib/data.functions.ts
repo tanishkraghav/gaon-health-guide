@@ -65,12 +65,11 @@ export const loginPatient = createServerFn({ method: "POST" })
   });
 
 
-function sha256(s: string): string {
-  // Lazy import to keep client bundle clean
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { createHash } = require("crypto") as typeof import("crypto");
+async function sha256(s: string): Promise<string> {
+  const { createHash } = await import("node:crypto");
   return createHash("sha256").update(s).digest("hex");
 }
+
 
 function maskPhone(p: string | null | undefined): string {
   if (!p) return "******";
