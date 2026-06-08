@@ -33,8 +33,10 @@ interface SessionState {
   setLang: (l: LangCode) => void;
   loginPatient: (input: { village: string; phone: string; name: string; age: number; gender: "F" | "M" }) => Promise<SessionPatient>;
   loginAsha: (workerId: string, pin: string) => Promise<SessionAsha | null>;
+  setAshaFromRow: (r: AshaRow) => SessionAsha;
   logout: () => void;
 }
+
 
 const SessionCtx = createContext<SessionState | null>(null);
 const STORAGE_KEY = "swasthya-session-v2";
