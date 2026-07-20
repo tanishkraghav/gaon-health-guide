@@ -291,6 +291,84 @@ Backend migrations are applied through Lovable Cloud. Do not apply Supabase migr
 
 ---
 
+## Architecture diagram
+
+The diagram below shows how the dual-mode UX branches from a single entry screen, how each route flows through TanStack `createServerFn` handlers, and how those handlers reach the Lovable Cloud (Supabase) Postgres tables and the Lovable AI Gateway.
+
+```mermaid
+graph TB
+  User([User])
+  User --> Role{Role Selection<br/>/}
+
+  Role -->|Patient| PLogin[Patient Login<br/>phone + location]
+  Role -->|ASHA| AOnboard[ASHA Onboarding<br/>WorkerID / OTP / PIN]
+
+  PLogin --> PHome[/patient/home/]
+  PHome --> PTriage[/patient/triage<br/>Web Speech API/]
+  PTriage --> PResult[/patient/result/]
+
+  AOnboard --> AHome[/asha/home<br/>metrics/]
+  AHome --> AVisits[/asha/visits/]
+  AVisits --> AVisit[/asha/visit/:id/]
+  AHome --> AAlerts[/asha/alerts/]
+  AHome --> AProfile[/asha/profile/]
+
+  subgraph Client [React 19 + TanStack Start]
+    Role
+    PLogin
+    PHome
+    PTriage
+    PResult
+    AOnboard
+    AHome
+    AVisits
+    AVisit
+    AAlerts
+    AProfile
+    Session[SessionProvider<br/>Context + localStorage]
+  end
+
+  PTriage -.-> Session
+  AHome -.-> Session
+
+  subgraph Server [createServerFn handlers]
+    DataFn[data.functions.ts<br/>auth / CRUD / metrics]
+    AIFn[ai.functions.ts<br/>triage + decision support]
+  end
+
+  PLogin ==>|loginPatient| DataFn
+  AOnboard ==>|lookup / otp / pin / profile| DataFn
+  PTriage ==>|triagePatient| AIFn
+  PResult ==>|notifyAsha insert| DataFn
+  AVisit ==>|ashaDecisionSupport| AIFn
+  AHome ==>|getAshaMetrics| DataFn
+  AVisits ==>|listVisits| DataFn
+  AAlerts ==>|listAlerts / acknowledge| DataFn
+
+  AIFn ==>|Gemini 2.5 Flash| Gateway[Lovable AI Gateway]
+  DataFn ==>|service role<br/>RLS enforced server-side| DB[(Lovable Cloud<br/>Postgres)]
+
+  subgraph DBTables [Tables - RLS deny-all]
+    T1[asha_workers]
+    T2[patients]
+    T3[visits]
+    T4[triage_alerts]
+    T5[otp_requests]
+  end
+
+  DB --- T1
+  DB --- T2
+  DB --- T3
+  DB --- T4
+  DB --- T5
+```
+
+A standalone `.mmd` version of this diagram is also available for embedding elsewhere:
+
+<lov-artifact url="/__l5e/documents/Architecture_Diagram.mmd" mime_type="text/vnd.mermaid"></lov-artifact>
+
+---
+
 ## Key design decisions
 
 1. **Single-login, dual-mode UX**: One entry screen branches into two isolated experiences. This keeps the app simple for users who may only ever use one mode.
